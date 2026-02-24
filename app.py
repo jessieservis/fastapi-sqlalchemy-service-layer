@@ -57,6 +57,55 @@ app = FastAPI(
 
 templates = Jinja2Templates(directory="templates")
 
+# ─────────────────────────────────────────────────────────────
+# HTML UI routes
+# ─────────────────────────────────────────────────────────────
+
+@app.get("/items/ui", response_class=HTMLResponse)
+async def items_page(request: Request, db: Session = Depends(get_db)):
+    items = item_service.get_all_items(db)
+    return templates.TemplateResponse(
+        "items_list.html",
+        {"request": request, "items": items},
+    )
+
+@app.get("/items/ui/new", response_class=HTMLResponse)
+async def create_item_form(request: Request):
+    return templates.TemplateResponse(
+        "create_item.html",
+        {"request": request},
+    )
+
+
+@app.post("/items/ui")
+async def create_item_from_form(
+    name: str = Form(...),
+    description: str = Form(""),
+    price: float = Form(...),
+    db: Session = Depends(get_db),
+):
+    try:
+        item_service.create_item(db, name=name, description=description, price=price)
+    except ValueError:
+        pass
+    return RedirectResponse(url="/items/ui", status_code=303)
+
+
+@app.get("/items/ui/{item_id}", response_class=HTMLResponse)
+async def item_detail(item_id: int, request: Request, db: Session = Depends(get_db)):
+    item = item_service.get_item_by_id(db, item_id)
+    if item is None:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return templates.TemplateResponse(
+        "item_detail.html",
+        {"request": request, "item": item},
+    )
+
+
+@app.post("/items/ui/delete/{item_id}")
+async def delete_item_from_ui(item_id: int, db: Session = Depends(get_db)):
+    item_service.delete_item(db, item_id)
+    return RedirectResponse(url="/items/ui", status_code=303)
 
 # ─────────────────────────────────────────────────────────────
 # JSON API routes
@@ -123,50 +172,6 @@ def delete_item(item_id: int, db: Session = Depends(get_db)):
 def bulk_discount(threshold: float, discount_pct: float, db: Session = Depends(get_db)):
     count = item_service.apply_bulk_discount(db, threshold, discount_pct)
     return {"detail": f"{count} item(s) discounted by {discount_pct}%", "updated": count}
-
-
-# ─────────────────────────────────────────────────────────────
-# HTML UI routes
-# ─────────────────────────────────────────────────────────────
-
-@app.get("/items/ui", response_class=HTMLResponse)
-async def items_page(request: Request, db: Session = Depends(get_db)):
-    items = item_service.get_all_items(db)
-    return templates.TemplateResponse(
-        "items_list.html",
-        {"request": request, "items": items},
-    )
-
-
-@app.post("/items/ui")
-async def create_item_from_form(
-    name: str = Form(...),
-    description: str = Form(""),
-    price: float = Form(...),
-    db: Session = Depends(get_db),
-):
-    try:
-        item_service.create_item(db, name=name, description=description, price=price)
-    except ValueError:
-        pass
-    return RedirectResponse(url="/items/ui", status_code=303)
-
-
-@app.get("/items/ui/{item_id}", response_class=HTMLResponse)
-async def item_detail(item_id: int, request: Request, db: Session = Depends(get_db)):
-    item = item_service.get_item_by_id(db, item_id)
-    if item is None:
-        raise HTTPException(status_code=404, detail="Item not found")
-    return templates.TemplateResponse(
-        "item_detail.html",
-        {"request": request, "item": item},
-    )
-
-
-@app.post("/items/ui/delete/{item_id}")
-async def delete_item_from_ui(item_id: int, db: Session = Depends(get_db)):
-    item_service.delete_item(db, item_id)
-    return RedirectResponse(url="/items/ui", status_code=303)
 
 
 if __name__ == "__main__":

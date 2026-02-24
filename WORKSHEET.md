@@ -94,6 +94,15 @@ Open each file and answer the questions in your own words.
 
 ```
 Your answer:
+- What table name does the `Item` model map to?
+    the 'items' table
+- List every column and its Python type.
+    id: int
+    name: String
+    description: String
+    price: float
+- Which column has a default value? What is it?
+    description has a defualt value of ""
 ```
 
 ### 1b. `db/database.py`
@@ -103,6 +112,10 @@ Your answer:
 
 ```
 Your answer:
+- What SQLAlchemy function creates the engine?
+    create_engine
+- What does `get_db` do, and why does it use `yield`?
+    get_db is a generator function and can pause and resume at any point. It uses yield key word to do that.
 ```
 
 ### 1c. `app.py`
@@ -113,6 +126,11 @@ Your answer:
 
 ```
 Your answer:
+- How does the `@app.on_event("startup")` handler differ from the older `@app.on_event` pattern?  
+  *(Hint: look at the lifespan context manager.)*
+    The lifespan context manager combines both startup and shutdown functionalities for the app.
+- How does `app.py` receive a database session without importing `Session` directly?
+    It receives it throught the get_db function
 ```
 
 ---

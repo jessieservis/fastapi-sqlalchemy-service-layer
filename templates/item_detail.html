@@ -1,0 +1,14 @@
+{% extends "base.html" %} {% block title %}Items Detail{% endblock %} {% block
+content %}
+<h2>Item</h2>
+
+{% if item %}
+<strong>{{ item.name }}</strong> – ${{ "%.2f"|format(item.price) }}
+<br />
+<small>{{ item.description }}</small>
+{% else %}
+<p>Item not found.</p>
+{% endif %}
+
+<hr />
+{% endblock %}
