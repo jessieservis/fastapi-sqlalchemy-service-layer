@@ -73,17 +73,32 @@ def delete_item(db: Session, item_id: int) -> bool:
     return True
 
 
-def apply_bulk_discount(
+# def apply_bulk_discount(
+#     db: Session,
+#     threshold: float,
+#     discount_pct: float,
+# ) -> int:
+#     """
+#     Reduce the price of every item whose price > threshold
+#     by discount_pct percent (e.g. 10.0 means 10% off).
+#     Returns the number of items updated.
+#     """
+#     items = db.query(Item).filter(Item.price > threshold).all()
+#     for item in items:
+#         item.price = round(item.price * (1 - discount_pct / 100), 2)
+#     db.commit()
+#     return len(items)
+
+def apply_discount(
     db: Session,
-    threshold: float,
     discount_pct: float,
-) -> int:
+):
     """
     Reduce the price of every item whose price > threshold
     by discount_pct percent (e.g. 10.0 means 10% off).
     Returns the number of items updated.
     """
-    items = db.query(Item).filter(Item.price > threshold).all()
+    items = db.query(Item).all()
     for item in items:
         item.price = round(item.price * (1 - discount_pct / 100), 2)
     db.commit()

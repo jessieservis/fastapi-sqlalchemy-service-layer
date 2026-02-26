@@ -145,9 +145,8 @@ Implement each function. **Do not modify `app.py` or any file in `db/`.**
 Return a list of all `Item` rows from the database.
 
 ```python
-def get_all_items(db: Session) -> list[Item]:
-    # TODO: query all items and return them
-    pass
+def get_all_items(db: Session) -> List[Item]:
+    return db.query(Item).all()
 ```
 
 **Test:** Navigate to `http://127.0.0.1:8000/items/ui` — you should see an empty table (no error).
@@ -159,9 +158,8 @@ def get_all_items(db: Session) -> list[Item]:
 Return a single `Item` by primary key, or `None` if not found.
 
 ```python
-def get_item_by_id(db: Session, item_id: int) -> Item | None:
-    # TODO
-    pass
+def get_item_by_id(db: Session, item_id: int) -> Optional[Item]:
+    return db.query(Item).filter(Item.id == item_id).first()
 ```
 
 ---
@@ -172,8 +170,19 @@ Create and persist a new `Item`. Return the saved object.
 
 ```python
 def create_item(db: Session, name: str, description: str, price: float) -> Item:
-    # TODO: create an Item, add to session, commit, refresh, return
-    pass
+    """
+    Create a new item.
+    Raises ValueError if an item with the same name already exists.
+    """
+    existing = db.query(Item).filter(Item.name.ilike(name)).first()
+    if existing:
+        raise ValueError(f"An item named '{name}' already exists.")
+
+    db_item = Item(name=name, description=description, price=price)
+    db.add(db_item)
+    db.commit()
+    db.refresh(db_item)
+    return db_item
 ```
 
 **Test:** Use the form at `http://127.0.0.1:8000/items/ui/new` to create an item.
@@ -186,8 +195,17 @@ Delete an item by ID. Return `True` if deleted, `False` if not found.
 
 ```python
 def delete_item(db: Session, item_id: int) -> bool:
-    # TODO
-    pass
+    """
+    Delete an item by id.
+    Returns True if deleted, False if not found.
+    """
+    db_item = get_item_by_id(db, item_id)
+    if db_item is None:
+        return False
+
+    db.delete(db_item)
+    db.commit()
+    return True
 ```
 
 **Test:** Use the Delete button next to any item in the list.
@@ -200,9 +218,20 @@ Reduce the price of every item by `percent` percent (e.g., 10 means 10% off).
 Return the number of items updated.
 
 ```python
-def apply_discount(db: Session, percent: float) -> int:
-    # TODO
-    pass
+def apply_discount(
+    db: Session,
+    discount_pct: float,
+):
+    """
+    Reduce the price of every item whose price > threshold
+    by discount_pct percent (e.g. 10.0 means 10% off).
+    Returns the number of items updated.
+    """
+    items = db.query(Item).all()
+    for item in items:
+        item.price = round(item.price * (1 - discount_pct / 100), 2)
+    db.commit()
+    return len(items)
 ```
 
 **Test:** `POST /items/discount?percent=10` (use the FastAPI docs at `/docs`).
@@ -224,11 +253,11 @@ Open `http://127.0.0.1:8000/docs` (Swagger UI) and test each endpoint:
 For each endpoint, record the HTTP status code you received:
 
 ```
-GET /items          status: ____
-GET /items/1        status: ____
-POST /items         status: ____
-DELETE /items/1     status: ____
-POST /items/discount status: ____
+GET /items          status: 200
+GET /items/1        status: 200
+POST /items         status: 201
+DELETE /items/1     status: 200
+POST /items/discount status: 200
 ```
 
 ---
@@ -241,36 +270,40 @@ Answer in 2-3 sentences each.
 
 ```
 Your answer:
+    It is better to keep database queries out of app.py for many reasons. One many reason is for testing. Having db queries in their own file allows for those tests to be unit tests, rather than integration tests. In addition, it is better for reusability. Not all db calls may come from app.py, so you don't want to have to rewrite code.
 ```
 
 2. **What would you need to change if you switched from SQLite to PostgreSQL?**
 
 ```
 Your answer:
+    SQLite works from a database file, as seen in this project as app.db. Other SQL versions, such as PostgreSQL work from servers. So, I would need to chance the database url to a PostgreSQL, which would likely have a login within it. I would also need to add checks for the db server to make sure the connection was successfully.
 ```
 
 3. **How does Jinja2 template inheritance (base.html) reduce code duplication?**
 
 ```
-Your answer:
+Your answer: 
+    base.html acts as a template that is passed to other html pages. Each html page that inherits the template only has to define what is different. That way, you don't have to recode the app headers and other shared details.
 ```
 
 4. **What does `db.refresh(item)` do after `db.commit()`?**
 
 ```
 Your answer:
+    db.refresh(item) is a function that updates the objects state from the database. The db.commit() updated/added an item, so it refreshed the table row so the object is updated. It makes sure the app is looking at the most recent version of the data.
 ```
 
 ---
 
 ## Submission Checklist
 
-- [ ] `services/item_service.py` — all five functions implemented
-- [ ] UI at `/items/ui` displays items with no errors
-- [ ] Items can be created via the form
-- [ ] Items can be deleted via the Delete button
-- [ ] `/items/discount` reduces prices correctly
-- [ ] All reflection questions answered
+- [x] `services/item_service.py` — all five functions implemented
+- [x] UI at `/items/ui` displays items with no errors
+- [x] Items can be created via the form
+- [x] Items can be deleted via the Delete button
+- [x] `/items/discount` reduces prices correctly
+- [x] All reflection questions answered
 
 ---
 

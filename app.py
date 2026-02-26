@@ -102,7 +102,7 @@ async def item_detail(item_id: int, request: Request, db: Session = Depends(get_
     )
 
 
-@app.post("/items/ui/delete/{item_id}")
+@app.post("/items/ui/{item_id}/delete")
 async def delete_item_from_ui(item_id: int, db: Session = Depends(get_db)):
     item_service.delete_item(db, item_id)
     return RedirectResponse(url="/items/ui", status_code=303)
@@ -167,11 +167,15 @@ def delete_item(item_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Item not found")
     return {"detail": "Item deleted"}
 
-
 @app.post("/items/discount")
-def bulk_discount(threshold: float, discount_pct: float, db: Session = Depends(get_db)):
-    count = item_service.apply_bulk_discount(db, threshold, discount_pct)
-    return {"detail": f"{count} item(s) discounted by {discount_pct}%", "updated": count}
+def apply_discount(discount_pct: float, db: Session = Depends(get_db)):
+    count = item_service.apply_discount(db, discount_pct)
+    return {"detail": f"{count} item(s) discounted by {discount_pct}%" , "updated": count}
+
+# @app.post("/items/discount")
+# def bulk_discount(threshold: float, discount_pct: float, db: Session = Depends(get_db)):
+#     count = item_service.apply_bulk_discount(db, threshold, discount_pct)
+#     return {"detail": f"{count} item(s) discounted by {discount_pct}%", "updated": count}
 
 
 if __name__ == "__main__":
